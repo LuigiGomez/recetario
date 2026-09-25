@@ -1,5 +1,5 @@
 // Guarda la app en el celular para que funcione sin internet.
-const VERSION = "recetario-v2";
+const VERSION = "recetario-v3";
 const APP = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-180.png"];
 
 self.addEventListener("install", e => {

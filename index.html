@@ -126,6 +126,10 @@ ol.steps li::before{content:counter(s);flex:none;width:34px;height:34px;border-r
 .drop.has .cta b{display:none}
 .linkbtn{background:none;border:0;color:var(--pink);font-weight:700;padding:8px 0}
 .status{font-size:.8rem;color:var(--muted);margin-top:30px;text-align:center}
+.backup{margin-top:28px;background:var(--surface);border-radius:24px;padding:18px;box-shadow:var(--shadow)}
+.backup h3{font-size:1.3rem;font-weight:800;margin-bottom:6px}
+.backup p{margin:0 0 14px;color:var(--muted);font-size:.9rem}
+.backup .actions .btn{flex:1}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 .toast.show{opacity:1}
 .busy{opacity:.6;pointer-events:none}
@@ -150,6 +154,11 @@ ol.steps li::before{content:counter(s);flex:none;width:34px;height:34px;border-r
       <button data-f="fav" aria-pressed="false">♥ Favoritas</button>
     </nav>
     <ul class="grid" id="list"></ul>
+    <section class="backup" aria-labelledby="bkTitle">
+      <h3 id="bkTitle">Copia de seguridad</h3>
+      <p>Tus recetas y fotos se guardan solo en este celular. Descarga una copia de vez en cuando y guárdala en Google Drive, así no las pierdes si cambias de teléfono.</p>
+      <div class="actions"><button class="btn primary" id="exportBtn">Descargar copia</button><button class="btn" id="importBtn">Restaurar copia</button></div>
+    </section>
     <p class="status" id="status">Cargando tus recetas…</p>
   </main>
 
@@ -189,6 +198,7 @@ ol.steps li::before{content:counter(s);flex:none;width:34px;height:34px;border-r
 </div>
 <button class="fab" id="fab">＋ Agregar receta</button>
 <input type="file" id="file" accept="image/*" hidden>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -408,6 +418,8 @@ document.addEventListener("click",e=>{
   }
   if(t.id==="dropClear"){pending="remove";setDrop(null);return}
   if(t.id==="fab"){openForm(null);return}
+  if(t.id==="exportBtn"){exportData();return}
+  if(t.id==="importBtn"){$("#importFile").click();return}
   if(t.id==="saveBtn"){saveForm();return}
   if(t.parentElement&&t.parentElement.id==="tabs"){filter=t.dataset.f;document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",String(b===t)));renderList()}
 });
@@ -428,6 +440,32 @@ function idb(){return new Promise((res,rej)=>{const r=indexedDB.open("recetario"
 async function idbGet(k){const db=await idb();return new Promise((res,rej)=>{const q=db.transaction("kv").objectStore("kv").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
 async function idbSet(k,v){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>{const e=new Error("full");e.code="quota_exceeded";rej(e)}})}
 const persist=()=>idbSet("data",DATA);
+function dayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function exportData(){
+  const data={app:"mi-recetario",version:1,exported:Date.now(),mine,favs:[...favs],photos};
+  if(!mine.length&&!favs.size&&!Object.keys(photos).length){toast("Aún no tienes recetas, favoritas ni fotos para guardar");return}
+  try{
+    const blob=new Blob([JSON.stringify(data)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=u;a.download="recetario-copia-"+dayKey()+".json";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),3000);
+    toast("Copia descargada ("+mine.length+" receta"+(mine.length===1?"":"s")+")");
+  }catch(e){toast("No se pudo crear la copia")}
+}
+$("#importFile").addEventListener("change",e=>{
+  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    let d;try{d=JSON.parse(r.result)}catch(err){d=null}
+    if(!d||d.app!=="mi-recetario"||!Array.isArray(d.mine)){toast("Ese archivo no es una copia del recetario");return}
+    if(!confirm("Se reemplazarán tus recetas, favoritas y fotos actuales por las de la copia ("+d.mine.length+" receta"+(d.mine.length===1?"":"s")+"). ¿Continuar?"))return;
+    DATA={mine:d.mine,favs:d.favs||[],photos:d.photos||{}};
+    try{await persist()}catch(err){toast("No hay espacio suficiente en el celular para restaurar la copia");return}
+    mine=DATA.mine.slice();favs=new Set(DATA.favs);photos=Object.assign({},DATA.photos);
+    current=null;show("vList");renderList();toast("Copia restaurada");
+  };
+  r.onerror=()=>toast("No se pudo leer el archivo");
+  r.readAsText(f);
+});
 store={
   save:async r=>{DATA.mine=DATA.mine.filter(y=>y.id!==r.id).concat([r]);await persist()},
   remove:async id=>{DATA.mine=DATA.mine.filter(y=>y.id!==id);await persist()},
