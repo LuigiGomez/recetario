@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi recetario</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF4F79">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -415,52 +421,31 @@ $("#file").addEventListener("change",async e=>{
 });
 
 // ---------- Guardado ----------
+// Guardado en el dispositivo (IndexedDB, con mucho más espacio para fotos)
 const LS="recetario-v1";
-function localStore(){
-  const read=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch(e){return {}}};
-  const write=d=>{try{localStorage.setItem(LS,JSON.stringify(d))}catch(e){const x=new Error("full");x.code="quota_exceeded";throw x}};
-  const d=read();mine=d.mine||[];favs=new Set(d.favs||[]);photos=d.photos||{};
-  return {
-    save:async r=>{const x=read();x.mine=(x.mine||[]).filter(y=>y.id!==r.id).concat([r]);write(x)},
-    remove:async id=>{const x=read();x.mine=(x.mine||[]).filter(y=>y.id!==id);write(x)},
-    savePrefs:async()=>{const x=read();x.favs=[...favs];x.photos=photos;write(x)},
-    upload:async b=>blobToData(await shrink(b,900)),
-    dropPhoto:()=>{}
-  };
-}
-store=localStore();renderList();
-$("#status").textContent="Tus recetas se guardan en este dispositivo.";
-
+let DATA={mine:[],favs:[],photos:{}};
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open("recetario",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbGet(k){const db=await idb();return new Promise((res,rej)=>{const q=db.transaction("kv").objectStore("kv").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+async function idbSet(k,v){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>{const e=new Error("full");e.code="quota_exceeded";rej(e)}})}
+const persist=()=>idbSet("data",DATA);
+store={
+  save:async r=>{DATA.mine=DATA.mine.filter(y=>y.id!==r.id).concat([r]);await persist()},
+  remove:async id=>{DATA.mine=DATA.mine.filter(y=>y.id!==id);await persist()},
+  savePrefs:async()=>{DATA.favs=[...favs];DATA.photos=photos;await persist()},
+  upload:async b=>blobToData(await shrink(b,1100)),
+  dropPhoto:()=>{}
+};
+renderList();
 (async()=>{
   try{
-    if(!window.claude||!window.claude.use)return;
-    const [db,user,assets]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("assets")]);
-    if(!db||!user)return;
-    const uid=await user.id();if(!uid)return;
-    const col=db.collection("data/users/"+uid);
-    const snap=await col.get();
-    const remote=[];let prefs={};
-    snap.docs.forEach(d=>{if(!d.exists)return;const v=d.data();if(d.id==="prefs")prefs=v||{};else if(v&&v.own)remote.push(v)});
-    const localMine=mine.filter(r=>!remote.some(x=>x.id===r.id));
-    const localFavs=favs;
-    canPhoto=!!assets;
-    store={
-      save:r=>col.doc(r.id).set(r),
-      remove:id=>col.doc(id).delete(),
-      savePrefs:()=>col.doc("prefs").set({favs:[...favs],photos}),
-      upload:async b=>{if(!assets)throw new Error("sin fotos");const res=await assets.upload(b);return res.id},
-      dropPhoto:v=>{if(assets&&v&&!v.startsWith("data:"))assets.delete(v).catch(()=>{})}
-    };
-    for(const r of localMine){const c=Object.assign({},r);if(c.photo&&c.photo.startsWith("data:")){try{c.photo=assets?(await assets.upload(await (await fetch(c.photo)).blob())).id:null}catch(e){c.photo=null}}try{await col.doc(c.id).set(c);remote.push(c)}catch(e){}}
-    mine=remote.sort((a,b)=>(a.updated||0)-(b.updated||0));
-    favs=new Set([...(prefs.favs||[]),...localFavs]);
-    photos=Object.assign({},prefs.photos||{});
-    if(localMine.length||favs.size!==(prefs.favs||[]).length)store.savePrefs().catch(()=>{});
-    $("#status").textContent="Tus recetas y fotos se guardan en tu cuenta y solo tú puedes verlas.";
-    renderList();
-    if(current&&!$("#vDetail").hidden){current=all().find(r=>r.id===current.id)||current;renderDetail()}
-  }catch(e){}
+    let d=await idbGet("data");
+    if(!d){try{d=JSON.parse(localStorage.getItem(LS))}catch(e){} if(d) await idbSet("data",d)}
+    if(d){DATA={mine:d.mine||[],favs:d.favs||[],photos:d.photos||{}};mine=DATA.mine.slice();favs=new Set(DATA.favs);photos=Object.assign({},DATA.photos);renderList()}
+    $("#status").textContent="Tus recetas y fotos se guardan en este celular y funcionan sin internet.";
+  }catch(e){$("#status").textContent="No se pudo abrir el almacenamiento del navegador."}
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 })();
+if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 })();
 </script>
 </body>
