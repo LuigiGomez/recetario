@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi recetario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F1FF; --surface:#FFFFFF; --ink:#211A3B; --muted:#6B6485; --line:#E6DEF7;
+  --pink:#FF4F79; --mango:#FFB23F; --mint:#2FCFA8; --sky:#5B8CFF; --grape:#9B5CFF;
+  --on-accent:#FFFFFF; --chip:#EDE6FB; --shadow:0 10px 30px rgba(59,33,120,.14);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15112A; --surface:#211B3D; --ink:#F3EFFF; --muted:#ADA5CC; --line:#322A55;
+    --chip:#2B2450; --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15112A; --surface:#211B3D; --ink:#F3EFFF; --muted:#ADA5CC; --line:#322A55;
+  --chip:#2B2450; --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Bricolage Grotesque","Figtree",system-ui,sans-serif;margin:0;line-height:1.05;letter-spacing:-.02em}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+img{max-width:100%;display:block}
+:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 120px}
+
+/* ---------- Portada ---------- */
+.hero{position:relative;padding:18px 0 8px}
+.hero h1{font-size:clamp(2.8rem,12vw,4.4rem);font-weight:800}
+.hero h1 .l2{display:block;background:linear-gradient(90deg,var(--pink),var(--mango) 55%,var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin:10px 0 0;color:var(--muted);max-width:34ch}
+.blob{position:absolute;right:-8px;top:0;width:110px;height:110px;border-radius:42% 58% 63% 37%/45% 40% 60% 55%;background:linear-gradient(135deg,var(--mango),var(--pink));display:grid;place-items:center;font-size:3rem;box-shadow:var(--shadow);transform:rotate(-8deg)}
+.searchbox{position:relative;margin-top:22px}
+.searchbox input{width:100%;padding:15px 16px 15px 46px;border:0;border-radius:18px;background:var(--surface);box-shadow:var(--shadow)}
+.searchbox span{position:absolute;left:16px;top:50%;transform:translateY(-50%);opacity:.6}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:18px 2px 8px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;border:0;background:var(--chip);padding:9px 16px;border-radius:999px;font-weight:700;font-size:.9rem;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+/* ---------- Tarjetas ---------- */
+.grid{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (min-width:620px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.card{position:relative;border-radius:24px;overflow:hidden;aspect-ratio:4/5;box-shadow:var(--shadow);background:var(--surface)}
+.card .open{position:absolute;inset:0;border:0;padding:0;background:none;text-align:left;width:100%;height:100%}
+.art{position:absolute;inset:0;display:grid;place-items:center;font-size:4rem}
+.art img{width:100%;height:100%;object-fit:cover}
+.card .shade{position:absolute;inset:auto 0 0 0;padding:40px 14px 14px;background:linear-gradient(transparent,rgba(20,12,40,.82));color:#fff}
+.card h3{font-size:1.12rem;font-weight:700}
+.card .meta{font-size:.78rem;opacity:.85;margin-top:3px}
+.lvl{position:absolute;left:12px;top:12px;background:rgba(255,255,255,.92);color:#211A3B;border-radius:999px;padding:3px 10px;font-weight:800;font-size:.78rem}
+.fav{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:#211A3B;font-size:1.1rem;display:grid;place-items:center}
+.fav[aria-pressed="true"]{background:var(--pink);color:#fff}
+.t0{background:linear-gradient(140deg,#FFD1DC,#FF8FAB)}.t1{background:linear-gradient(140deg,#FFE3B0,#FFB23F)}
+.t2{background:linear-gradient(140deg,#C5F5E8,#2FCFA8)}.t3{background:linear-gradient(140deg,#D6E2FF,#5B8CFF)}
+.t4{background:linear-gradient(140deg,#E7D8FF,#9B5CFF)}
+.empty{grid-column:1/-1;padding:40px 16px;text-align:center;color:var(--muted);background:var(--surface);border-radius:24px}
+
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--pink);color:var(--on-accent);border:0;border-radius:999px;padding:16px 22px;font-weight:800;box-shadow:0 10px 26px rgba(255,79,121,.45);z-index:5}
+
+/* ---------- Detalle ---------- */
+.dhero{position:relative;margin:-18px -16px 0;height:min(62vw,380px);overflow:hidden}
+.dhero .art{font-size:6rem}
+.dhero .top{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:space-between}
+.pill{border:0;border-radius:999px;padding:10px 14px;background:rgba(255,255,255,.94);color:#211A3B;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.dhero .photo{position:absolute;right:12px;bottom:34px}
+.sheet{position:relative;background:var(--bg);border-radius:28px 28px 0 0;margin:-24px -16px 0;padding:24px 16px 0}
+.sheet h2{font-size:clamp(2rem,8vw,2.8rem);font-weight:800}
+.tagrow{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
+.tag{background:var(--chip);border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:700;color:var(--muted)}
+.scaler{background:linear-gradient(120deg,var(--pink),var(--grape));color:#fff;border-radius:26px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 12px 30px rgba(155,92,255,.35)}
+.scaler .num{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:3.2rem;line-height:1;text-align:center}
+.scaler .num.bump{animation:bump .22s ease-out}
+@keyframes bump{50%{transform:scale(1.15)}}
+.scaler .lbl{font-size:.9rem;opacity:.9;text-align:center}
+.step{width:54px;height:54px;border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:1.7rem;font-weight:800;line-height:1}
+.factor{color:var(--muted);font-size:.88rem;margin:10px 4px 24px}
+.factor button{background:none;border:0;color:var(--pink);font-weight:700;padding:0 0 0 6px}
+section.block{margin-bottom:28px}
+section.block h3{font-size:1.45rem;font-weight:800;margin-bottom:12px}
+.ing{list-style:none;margin:0;padding:6px;background:var(--surface);border-radius:22px;box-shadow:var(--shadow)}
+.ing li{display:flex;gap:12px;align-items:baseline;padding:11px 12px;border-radius:14px}
+.ing li:nth-child(even):not(.grp){background:var(--chip)}
+.ing .q{flex:none;min-width:5.6em;font-weight:800;color:var(--pink);font-variant-numeric:tabular-nums}
+.ing li.grp{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;color:var(--grape);padding-top:14px}
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.steps li{counter-increment:s;display:flex;gap:14px;margin-bottom:14px}
+ol.steps li::before{content:counter(s);flex:none;width:34px;height:34px;border-radius:12px;background:var(--mango);color:#211A3B;font-weight:800;display:grid;place-items:center}
+.note{background:var(--surface);border-left:5px solid var(--mint);border-radius:14px;padding:12px 14px;font-size:.92rem;box-shadow:var(--shadow)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:0;background:var(--surface);border-radius:14px;padding:12px 16px;font-weight:700;box-shadow:var(--shadow)}
+.btn.primary{background:var(--pink);color:var(--on-accent)}
+.btn.danger{color:#E0413B}
+
+/* ---------- Formulario ---------- */
+.form h2{font-size:2.3rem;font-weight:800;margin:12px 0 4px}
+.form label{display:block;font-weight:700;margin:18px 0 6px}
+.form .hint{font-weight:400;color:var(--muted);font-size:.85rem;display:block}
+.form input,.form textarea,.form select{width:100%;padding:13px 14px;border:2px solid transparent;border-radius:16px;background:var(--surface);box-shadow:var(--shadow)}
+.form input:focus,.form textarea:focus,.form select:focus{border-color:var(--pink);outline:none}
+.form textarea{min-height:140px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.drop{position:relative;display:grid;place-items:center;aspect-ratio:16/10;border-radius:22px;border:2.5px dashed var(--line);background:var(--surface);color:var(--muted);text-align:center;overflow:hidden;cursor:pointer}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.drop .cta{position:relative;font-weight:700;padding:10px}
+.drop .cta b{display:block;font-size:2rem;margin-bottom:4px}
+.drop.has .cta{background:rgba(255,255,255,.92);color:#211A3B;border-radius:999px;padding:8px 14px;align-self:end;margin-bottom:12px;font-size:.9rem}
+.drop.has .cta b{display:none}
+.linkbtn{background:none;border:0;color:var(--pink);font-weight:700;padding:8px 0}
+.status{font-size:.8rem;color:var(--muted);margin-top:30px;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+.toast.show{opacity:1}
+.busy{opacity:.6;pointer-events:none}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}.scaler .num.bump{animation:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <main id="vList">
+    <header class="hero">
+      <div class="blob" aria-hidden="true">🧁</div>
+      <h1>Mi<span class="l2">recetario</span></h1>
+      <p>Ajusta las porciones y las cantidades se calculan solas.</p>
+      <div class="searchbox"><span aria-hidden="true">🔍</span><input id="q" type="search" placeholder="Buscar receta o ingrediente" aria-label="Buscar"></div>
+    </header>
+    <nav class="tabs" id="tabs" aria-label="Filtrar">
+      <button data-f="todas" aria-pressed="true">Todas</button>
+      <button data-f="postre" aria-pressed="false">🍰 Postres</button>
+      <button data-f="nutritiva" aria-pressed="false">🥗 Nutritivas</button>
+      <button data-f="mias" aria-pressed="false">✍️ Mis recetas</button>
+      <button data-f="fav" aria-pressed="false">♥ Favoritas</button>
+    </nav>
+    <ul class="grid" id="list"></ul>
+    <p class="status" id="status">Cargando tus recetas…</p>
+  </main>
+
+  <article id="vDetail" hidden></article>
+
+  <section id="vForm" class="form" hidden>
+    <button class="btn" data-go="list">‹ Volver</button>
+    <h2 id="formTitle">Nueva receta</h2>
+    <div id="photoField">
+      <label>Foto</label>
+      <div class="drop" id="drop" role="button" tabindex="0" aria-label="Elegir foto">
+        <img id="dropImg" alt="" hidden>
+        <span class="cta"><b>📷</b><span id="dropTxt">Toca para subir una foto</span></span>
+      </div>
+      <button class="linkbtn" id="dropClear" hidden>Quitar foto</button>
+    </div>
+    <label for="fName">Nombre</label>
+    <input id="fName" maxlength="80" placeholder="Ej. Galletas de avena y plátano">
+    <div class="row">
+      <div><label for="fCat">Tipo</label>
+        <select id="fCat"><option value="postre">Postre</option><option value="nutritiva">Nutritiva</option><option value="otra">Otra</option></select></div>
+      <div><label for="fServ">Rinde</label><input id="fServ" type="number" min="1" max="200" value="4" inputmode="numeric"></div>
+    </div>
+    <label for="fUnit">¿Porciones o unidades?</label>
+    <select id="fUnit"><option value="porciones">porciones</option><option value="unidades">unidades</option></select>
+    <label for="fIng">Ingredientes <span class="hint">Uno por línea, con la cantidad primero: «200 g harina», «1/2 taza leche», «2 huevos». Así se pueden recalcular.</span></label>
+    <textarea id="fIng" placeholder="2 plátanos maduros&#10;1 taza avena&#10;1/2 cdta canela"></textarea>
+    <label for="fSteps">Pasos <span class="hint">Uno por línea.</span></label>
+    <textarea id="fSteps" placeholder="Aplasta los plátanos.&#10;Mezcla con la avena y la canela.&#10;Hornea 15 minutos a 180 °C."></textarea>
+    <label for="fNote">Notas (opcional)</label>
+    <input id="fNote" maxlength="300" placeholder="Ej. Sin azúcar añadida, ideal para el lonche">
+    <div class="actions" style="margin-top:24px">
+      <button class="btn primary" id="saveBtn">Guardar receta</button>
+      <button class="btn" data-go="list">Cancelar</button>
+    </div>
+  </section>
+</div>
+<button class="fab" id="fab">＋ Agregar receta</button>
+<input type="file" id="file" accept="image/*" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const I=(q,u,n)=>({q,u,n}); const G=n=>({grp:n});
+const BASE=[
+ {id:"b1",lvl:1,emo:"🍬",name:"Trufas de chocolate",cat:"postre",serv:20,unit:"unidades",tags:["Sin horno"],
+  ing:[I(200,"g","chocolate semiamargo picado"),I(100,"ml","crema de leche"),I(1,"cda","mantequilla (opcional)"),I(null,"","Cocoa en polvo para cubrir")],
+  steps:["Calienta la crema hasta que empiece a hervir y viértela sobre el chocolate picado.","Deja reposar 2 minutos y mezcla desde el centro hasta que esté liso. Agrega la mantequilla.","Refrigera 2 horas hasta que esté firme.","Forma bolitas con una cucharita y pásalas por cocoa."]},
+ {id:"b2",lvl:2,emo:"🍚",name:"Arroz con leche",cat:"postre",serv:6,unit:"porciones",tags:["Sin horno"],
+  ing:[I(1,"taza","arroz"),I(2,"taza","agua"),I(1,"","rama de canela"),I(3,"","clavos de olor"),I(1,"","cáscara de naranja"),I(400,"ml","leche evaporada (1 lata)"),I(395,"g","leche condensada (1 lata)"),I(1,"taza","leche fresca"),I(null,"","Canela en polvo")],
+  steps:["Cocina el arroz en el agua con la canela, los clavos y la cáscara de naranja a fuego medio hasta que esté suave (15-20 min).","Retira la cáscara y los clavos. Agrega las tres leches.","Cocina a fuego bajo 15 minutos, removiendo seguido para que no se pegue, hasta que quede cremoso.","Sirve con canela en polvo. Espesa más al enfriarse."]},
+ {id:"b3",lvl:3,emo:"🍎",name:"Crumble de manzana",cat:"postre",serv:6,unit:"porciones",tags:["180 °C"],
+  ing:[G("Fruta"),I(4,"","manzanas peladas en cubos"),I(2,"cda","azúcar"),I(1,"cdta","canela"),I(0.5,"","limón (su jugo)"),G("Cobertura"),I(100,"g","harina"),I(75,"g","azúcar"),I(75,"g","mantequilla fría en cubitos")],
+  steps:["Mezcla las manzanas con azúcar, canela y limón, y ponlas en una fuente.","Frota con los dedos la harina, el azúcar y la mantequilla hasta formar migas gruesas.","Cubre las manzanas con las migas.","Hornea 35-40 minutos hasta que esté dorado y burbujee."]},
+ {id:"b4",lvl:4,emo:"🍫",name:"Brownies",cat:"postre",serv:16,unit:"cuadrados",tags:["180 °C","Molde 20×20 cm"],
+  ing:[I(125,"g","mantequilla"),I(200,"g","chocolate bitter"),I(200,"g","azúcar"),I(3,"","huevos"),I(1,"cdta","vainilla"),I(80,"g","harina"),I(1,"pizca","sal")],
+  steps:["Derrite la mantequilla con el chocolate (a baño maría o en microondas de 30 en 30 segundos).","Agrega el azúcar, luego los huevos uno por uno y la vainilla.","Incorpora la harina y la sal con espátula, sin batir de más.","Vierte en el molde engrasado y hornea 22-25 minutos. El centro debe quedar ligeramente húmedo.","Deja enfriar antes de cortar."],
+  note:"Si cambias mucho la cantidad, cambia también el molde: el doble de 20×20 cm es aprox. 28×28 cm."},
+ {id:"b5",lvl:5,emo:"🧁",name:"Muffins de plátano",cat:"postre",serv:12,unit:"unidades",tags:["180 °C"],
+  ing:[I(3,"","plátanos muy maduros"),I(80,"ml","aceite"),I(150,"g","azúcar"),I(1,"","huevo"),I(1,"cdta","vainilla"),I(1,"cdta","bicarbonato"),I(1,"pizca","sal"),I(190,"g","harina")],
+  steps:["Aplasta los plátanos con un tenedor.","Mezcla con el aceite, el azúcar, el huevo y la vainilla.","Agrega el bicarbonato, la sal y la harina. Mezcla solo hasta integrar; los grumos están bien.","Llena los pirotines hasta ¾ y hornea 20-22 minutos, hasta que un palito salga limpio."]},
+ {id:"b6",lvl:6,emo:"🥞",name:"Panqueques (crepes)",cat:"postre",serv:10,unit:"unidades",tags:["Sartén"],
+  ing:[I(1,"taza","harina"),I(2,"","huevos"),I(1.25,"taza","leche"),I(2,"cda","mantequilla derretida"),I(1,"cda","azúcar"),I(1,"pizca","sal")],
+  steps:["Licúa o bate todo hasta que no haya grumos. Deja reposar 30 minutos.","Calienta una sartén antiadherente a fuego medio con un poco de mantequilla.","Vierte un cucharón pequeño de masa y gira la sartén para cubrir el fondo.","Cuando los bordes se despeguen (1 min), voltea y cocina 30 segundos más.","Rellena con manjar blanco, fruta o chocolate."]},
+ {id:"b7",lvl:7,emo:"🍪",name:"Galletas con chispas",cat:"postre",serv:18,unit:"unidades",tags:["180 °C"],
+  ing:[I(115,"g","mantequilla blanda"),I(100,"g","azúcar rubia"),I(50,"g","azúcar blanca"),I(1,"","huevo"),I(1,"cdta","vainilla"),I(190,"g","harina"),I(0.5,"cdta","bicarbonato"),I(0.5,"cdta","sal"),I(150,"g","chispas de chocolate")],
+  steps:["Bate la mantequilla con ambos azúcares hasta que esté cremosa y más clara (2-3 min).","Agrega el huevo y la vainilla.","Incorpora la harina, el bicarbonato y la sal. Añade las chispas.","Refrigera la masa 30 minutos.","Forma bolitas, sepáralas bien en la bandeja y hornea 10-12 minutos. Sácalas con los bordes dorados y el centro aún suave."]},
+ {id:"b8",lvl:8,emo:"🍰",name:"Queque de vainilla",cat:"postre",serv:8,unit:"porciones",tags:["180 °C","Molde 22 cm"],
+  ing:[I(250,"g","harina"),I(2,"cdta","polvo de hornear"),I(1,"pizca","sal"),I(200,"g","mantequilla blanda"),I(200,"g","azúcar"),I(4,"","huevos"),I(1,"cdta","vainilla"),I(120,"ml","leche")],
+  steps:["Engrasa y enharina el molde. Mezcla harina, polvo de hornear y sal aparte.","Bate la mantequilla con el azúcar 3-4 minutos hasta que esté esponjosa.","Agrega los huevos de uno en uno, batiendo bien entre cada uno. Añade la vainilla.","Incorpora la harina en tres partes, alternando con la leche, a velocidad baja.","Hornea 40-45 minutos. No abras el horno los primeros 30 minutos."]},
+ {id:"b9",lvl:9,emo:"🍮",name:"Flan",cat:"postre",serv:8,unit:"porciones",tags:["170 °C","Baño maría"],
+  ing:[G("Caramelo"),I(150,"g","azúcar"),G("Flan"),I(395,"g","leche condensada (1 lata)"),I(400,"ml","leche evaporada (1 lata)"),I(4,"","huevos"),I(1,"cdta","vainilla")],
+  steps:["Derrite el azúcar en una olla a fuego medio sin remover, solo moviendo la olla, hasta que tome color ámbar. Viértelo rápido en el molde (¡quema mucho!).","Licúa las leches, los huevos y la vainilla. Vierte sobre el caramelo.","Tapa con papel aluminio y coloca el molde dentro de una fuente con agua caliente hasta la mitad.","Hornea 50-60 minutos, hasta que el centro tiemble ligeramente pero no esté líquido.","Refrigera mínimo 4 horas. Pasa un cuchillo por el borde y voltea sobre un plato."]},
+ {id:"b10",lvl:10,emo:"🍋",name:"Pie de limón",cat:"postre",serv:8,unit:"porciones",tags:["180 °C","Molde 22 cm"],
+  ing:[G("Base"),I(200,"g","galletas de vainilla"),I(90,"g","mantequilla derretida"),G("Relleno"),I(395,"g","leche condensada (1 lata)"),I(3,"","yemas"),I(120,"ml","jugo de limón"),G("Merengue"),I(3,"","claras"),I(150,"g","azúcar")],
+  steps:["Tritura las galletas, mezcla con la mantequilla y presiona en el molde. Hornea 10 minutos.","Mezcla la leche condensada con las yemas y agrega el jugo de limón poco a poco. Vierte sobre la base y hornea 10 minutos más. Deja enfriar.","Pon las claras y el azúcar en un bol sobre una olla con agua caliente y remueve hasta que el azúcar se disuelva y esté bien caliente al tacto.","Retira y bate hasta que forme picos firmes y brillantes (5-7 min).","Cubre el pie con el merengue y dóralo a 200 °C por 3-5 minutos, vigilando que no se queme.","Refrigera al menos 3 horas antes de servir."]}
+];
+
+let mine=[], favs=new Set(), photos={};
+let filter="todas", query="", current=null, servings=0, editingId=null;
+let store=null, canPhoto=true;
+let pending=null; // {blob, url} | "remove" | null
+let fileTarget=null;
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2000)}
+const all=()=>BASE.concat(mine);
+const tone=r=>"t"+((r.own?[...r.id].reduce((a,c)=>a+c.charCodeAt(0),0):r.lvl)%5);
+const emoOf=r=>r.emo||(r.cat==="nutritiva"?"🥗":r.cat==="postre"?"🍩":"🍽️");
+function photoOf(r){const p=r.own?r.photo:photos[r.id]; if(!p) return null; return p.startsWith("data:")?p:"/_blob/"+p}
+function artHTML(r){const s=photoOf(r);return '<div class="art '+tone(r)+'">'+(s?'<img src="'+esc(s)+'" alt="" loading="lazy">':'<span aria-hidden="true">'+emoOf(r)+'</span>')+'</div>'}
+
+// ---------- Cantidades ----------
+const FR=[[0,""],[0.25,"¼"],[1/3,"⅓"],[0.5,"½"],[2/3,"⅔"],[0.75,"¾"],[1,""]];
+function frac(x){let w=Math.floor(x),r=x-w,best=FR[0],d=1;for(const f of FR){const dd=Math.abs(r-f[0]);if(dd<d){d=dd;best=f}}if(best[0]===1){w+=1;best=FR[0]}if(w===0&&!best[1])return x>0?"¼":"0";return (w?String(w):"")+(w&&best[1]?" ":"")+best[1]}
+const PL={taza:"tazas",cda:"cdas",cdta:"cdtas",lata:"latas",pizca:"pizcas"};
+function fmt(q,u){
+  if(q==null) return "";
+  if(u==="g"||u==="ml"){let v=q>=100?Math.round(q/5)*5:q>=10?Math.round(q):Math.round(q*2)/2;
+    if(v>=1000) return (v/1000).toLocaleString("es",{maximumFractionDigits:2})+(u==="g"?" kg":" l");
+    return v.toLocaleString("es")+" "+u}
+  if(u==="kg"||u==="l") return (Math.round(q*100)/100).toLocaleString("es")+" "+u;
+  const s=frac(q); if(!u) return s; return s+" "+(q>1.01&&PL[u]?PL[u]:u);
+}
+const UNITS={g:"g",gr:"g",gramos:"g",gramo:"g",kg:"kg",ml:"ml",l:"l",litro:"l",litros:"l",taza:"taza",tazas:"taza",cda:"cda",cdas:"cda",cucharada:"cda",cucharadas:"cda",cdta:"cdta",cdtas:"cdta",cucharadita:"cdta",cucharaditas:"cdta",lata:"lata",latas:"lata",pizca:"pizca",pizcas:"pizca"};
+function parseLine(t){
+  if(!t) return null;
+  const m=t.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?)\s*(.*)$/);
+  if(!m) return {q:null,u:"",n:t};
+  let s=m[1],q;
+  if(/\s/.test(s)){const [a,b]=s.split(/\s+/);const [n,d]=b.split("/");q=+a+(+n)/(+d)}
+  else if(s.includes("/")){const [n,d]=s.split("/");q=(+n)/(+d)} else q=parseFloat(s.replace(",","."));
+  let rest=m[2],u="";const w=rest.match(/^([a-záéíóúñ]+)\.?\s+(?:de\s+)?(.*)$/i);
+  if(w&&UNITS[w[1].toLowerCase()]){u=UNITS[w[1].toLowerCase()];rest=w[2]}
+  if(!isFinite(q)) return {q:null,u:"",n:t};
+  return {q,u,n:rest||t};
+}
+const UF={"¼":"1/4","½":"1/2","¾":"3/4","⅓":"1/3","⅔":"2/3"};
+function ingToText(i){if(i.grp)return "# "+i.grp;if(i.q==null)return i.n;return fmt(i.q,i.u).replace(/[¼½¾⅓⅔]/g,c=>UF[c])+" "+i.n}
+
+// ---------- Fotos ----------
+function shrink(file,max){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");
+      c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);c.toBlob(b=>b?res(b):rej(new Error("x")),"image/jpeg",0.82)};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("No se pudo leer la imagen"))};
+    img.src=url;
+  });
+}
+const blobToData=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+
+// ---------- Vistas ----------
+function show(v){["vList","vDetail","vForm"].forEach(id=>$("#"+id).hidden=(id!==v));$("#fab").hidden=(v!=="vList");window.scrollTo(0,0)}
+
+function renderList(){
+  const q=query.toLowerCase();
+  const items=all().filter(r=>{
+    if(filter==="postre"&&r.cat!=="postre")return false;
+    if(filter==="nutritiva"&&r.cat!=="nutritiva")return false;
+    if(filter==="mias"&&!r.own)return false;
+    if(filter==="fav"&&!favs.has(r.id))return false;
+    return !q||r.name.toLowerCase().includes(q)||r.ing.some(i=>(i.n||"").toLowerCase().includes(q));
+  });
+  const ul=$("#list");
+  if(!items.length){
+    const msg={mias:"Aún no has agregado recetas. Toca «Agregar receta» para guardar la primera.",fav:"Toca el corazón de una receta para tenerla aquí.",nutritiva:"Todavía no tienes recetas nutritivas. Agrega una y elige el tipo «Nutritiva»."}[filter]||"No hay recetas que coincidan con tu búsqueda.";
+    ul.innerHTML='<li class="empty">'+esc(msg)+'</li>';return;
+  }
+  ul.innerHTML=items.map(r=>{
+    const sub=(r.own?"Mi receta · ":"")+r.serv+" "+r.unit;
+    return '<li class="card">'+artHTML(r)+
+      '<button class="open" data-id="'+r.id+'" aria-label="'+esc(r.name)+'"><div class="shade"><h3>'+esc(r.name)+'</h3><div class="meta">'+esc(sub)+'</div></div></button>'+
+      (r.own?'':'<span class="lvl">Nivel '+r.lvl+'</span>')+
+      '<button class="fav" data-fav="'+r.id+'" aria-pressed="'+favs.has(r.id)+'" aria-label="Favorita">'+(favs.has(r.id)?"♥":"♡")+'</button></li>';
+  }).join("");
+}
+
+function openRecipe(id){current=all().find(r=>r.id===id);if(!current)return;servings=current.serv;renderDetail();show("vDetail")}
+function renderDetail(bump){
+  const r=current,f=servings/r.serv;
+  const tags=(r.own?[r.cat==="nutritiva"?"🥗 Nutritiva":r.cat==="postre"?"🍰 Postre":"Mi receta"]:["Nivel "+r.lvl+" de 10"]).concat(r.tags||[]);
+  const ing=r.ing.map(i=>i.grp?'<li class="grp">'+esc(i.grp)+'</li>':'<li><span class="q">'+esc(i.q==null?"—":fmt(i.q*f,i.u))+'</span><span>'+esc(i.n)+'</span></li>').join("");
+  const eggs=r.ing.some(i=>/huevo|yema|clara/i.test(i.n||"")&&i.q!=null&&Math.abs(i.q*f-Math.round(i.q*f))>0.1);
+  const oven=f!==1&&(r.tags||[]).concat(r.steps).some(t=>/°C|horn/i.test(t));
+  const hasP=!!photoOf(r);
+  $("#vDetail").innerHTML=
+   '<div class="dhero">'+artHTML(r)+'<div class="top"><button class="pill" data-go="list">‹ Recetas</button><button class="pill" data-fav="'+r.id+'" aria-pressed="'+favs.has(r.id)+'" aria-label="Favorita">'+(favs.has(r.id)?"♥ Favorita":"♡ Favorita")+'</button></div>'+
+   (canPhoto?'<button class="pill photo" data-photo>'+(hasP?"📷 Cambiar foto":"📷 Agregar foto")+'</button>':'')+'</div>'+
+   '<div class="sheet"><h2>'+esc(r.name)+'</h2><div class="tagrow">'+tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join("")+'</div>'+
+   '<div class="scaler"><button class="step" data-s="-1" aria-label="Menos">−</button><div><div class="num'+(bump?" bump":"")+'">'+servings+'</div><div class="lbl">'+esc(r.unit)+'</div></div><button class="step" data-s="1" aria-label="Más">+</button></div>'+
+   '<p class="factor">'+(f===1?"Cantidades originales.":"Todo multiplicado por "+(Math.round(f*100)/100).toLocaleString("es")+".")+(f!==1?'<button data-reset>Volver a '+r.serv+'</button>':'')+'</p>'+
+   '<section class="block"><h3>Ingredientes</h3><ul class="ing">'+ing+'</ul></section>'+
+   (eggs||oven?'<section class="block">'+(eggs?'<p class="note">Para medio huevo: bate uno y usa la mitad (unos 25 g).</p>':'')+(oven?'<p class="note" style="margin-top:10px">Mantén la misma temperatura. El tiempo depende del grosor de la masa: revisa con un palito unos minutos antes.</p>':'')+'</section>':'')+
+   '<section class="block"><h3>Preparación</h3><ol class="steps">'+r.steps.map(s=>'<li><span>'+esc(s)+'</span></li>').join("")+'</ol></section>'+
+   (r.note?'<section class="block"><p class="note">'+esc(r.note)+'</p></section>':'')+
+   '<div class="actions">'+(r.own?'<button class="btn" data-edit>✏️ Editar</button><button class="btn danger" data-del>Eliminar</button>':'<button class="btn" data-copy>✍️ Hacer mi versión</button>')+
+   (hasP&&canPhoto?'<button class="btn" data-unphoto>Quitar foto</button>':'')+'</div></div>';
+}
+
+function setDrop(src){const img=$("#dropImg"),d=$("#drop");if(src){img.src=src;img.hidden=false;d.classList.add("has");$("#dropTxt").textContent="Cambiar foto";$("#dropClear").hidden=false}else{img.hidden=true;img.removeAttribute("src");d.classList.remove("has");$("#dropTxt").textContent="Toca para subir una foto";$("#dropClear").hidden=true}}
+function openForm(r,asCopy){
+  editingId=r&&!asCopy?r.id:null; pending=null;
+  $("#formTitle").textContent=editingId?"Editar receta":"Nueva receta";
+  $("#fName").value=r?(asCopy?r.name+" (mi versión)":r.name):"";
+  $("#fCat").value=r?(r.cat==="nutritiva"||r.cat==="otra"?r.cat:"postre"):"postre";
+  $("#fServ").value=r?r.serv:4;
+  $("#fUnit").value=r&&r.unit==="unidades"?"unidades":"porciones";
+  $("#fIng").value=r?r.ing.map(ingToText).join("\n"):"";
+  $("#fSteps").value=r?r.steps.join("\n"):"";
+  $("#fNote").value=r&&r.note?r.note:"";
+  $("#photoField").hidden=!canPhoto;
+  setDrop(editingId?photoOf(r):null);
+  show("vForm");
+}
+
+async function uploadPhoto(blob){ return store.upload(blob) } // devuelve id o dataURL
+
+async function saveForm(){
+  const name=$("#fName").value.trim(), serv=Math.max(1,Math.round(+$("#fServ").value||0));
+  const ing=$("#fIng").value.split("\n").map(l=>{const t=l.trim();if(t.startsWith("#"))return {grp:t.replace(/^#\s*/,"")};return parseLine(t)}).filter(Boolean);
+  const steps=$("#fSteps").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  if(!name){toast("Escribe un nombre");$("#fName").focus();return}
+  if(!ing.length){toast("Agrega al menos un ingrediente");$("#fIng").focus();return}
+  const prev=editingId?mine.find(x=>x.id===editingId):null;
+  const btn=$("#saveBtn");btn.classList.add("busy");btn.textContent="Guardando…";
+  try{
+    let photo=prev?prev.photo||null:null, old=null;
+    if(pending==="remove"){old=photo;photo=null}
+    else if(pending&&pending.blob){old=photo;photo=await uploadPhoto(pending.blob)}
+    const r={id:editingId||("r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),own:true,name,cat:$("#fCat").value,serv,unit:$("#fUnit").value,ing,steps,note:$("#fNote").value.trim(),photo,updated:Date.now()};
+    await store.save(r);
+    if(old&&old!==photo) store.dropPhoto(old);
+    const i=mine.findIndex(x=>x.id===r.id);if(i>=0)mine[i]=r;else mine.push(r);
+    toast(editingId?"Receta actualizada":"Receta guardada");
+    current=r;servings=r.serv;renderDetail();show("vDetail");renderList();
+  }catch(e){toast(e&&e.code==="quota_exceeded"?"No queda espacio para fotos. Quita alguna foto antigua.":"No se pudo guardar. Intenta de nuevo.")}
+  finally{btn.classList.remove("busy");btn.textContent="Guardar receta"}
+}
+
+async function setRecipePhoto(r,blob){
+  toast("Subiendo foto…");
+  try{
+    const val=blob?await uploadPhoto(blob):null;
+    let old;
+    if(r.own){old=r.photo;r.photo=val;r.updated=Date.now();await store.save(r)}
+    else{old=photos[r.id];if(val)photos[r.id]=val;else delete photos[r.id];await store.savePrefs()}
+    if(old&&old!==val) store.dropPhoto(old);
+    toast(blob?"Foto guardada":"Foto quitada");renderDetail();renderList();
+  }catch(e){toast(e&&e.code==="quota_exceeded"?"No queda espacio para fotos.":"No se pudo subir la foto.")}
+}
+
+async function toggleFav(id){favs.has(id)?favs.delete(id):favs.add(id);renderList();if(current&&!$("#vDetail").hidden)renderDetail();try{await store.savePrefs()}catch(e){}}
+
+// ---------- Eventos ----------
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,#drop");if(!t)return;
+  if(t.id==="drop"){fileTarget="form";$("#file").click();return}
+  if(t.dataset.fav){toggleFav(t.dataset.fav);return}
+  if(t.dataset.id){openRecipe(t.dataset.id);return}
+  if(t.dataset.go==="list"){show("vList");return}
+  if(t.dataset.s){const n=Math.max(1,Math.min(500,servings+ +t.dataset.s));if(n!==servings){servings=n;renderDetail(true)}return}
+  if(t.hasAttribute("data-reset")){servings=current.serv;renderDetail(true);return}
+  if(t.hasAttribute("data-photo")){fileTarget="detail";$("#file").click();return}
+  if(t.hasAttribute("data-unphoto")){if(confirm("¿Quitar la foto de esta receta?"))setRecipePhoto(current,null);return}
+  if(t.hasAttribute("data-edit")){openForm(current,false);return}
+  if(t.hasAttribute("data-copy")){openForm(current,true);return}
+  if(t.hasAttribute("data-del")){
+    if(!confirm("¿Eliminar «"+current.name+"»? No se puede deshacer."))return;
+    const r=current;
+    store.remove(r.id).then(()=>{if(r.photo)store.dropPhoto(r.photo);mine=mine.filter(x=>x.id!==r.id);favs.delete(r.id);store.savePrefs().catch(()=>{});renderList();show("vList");toast("Receta eliminada")}).catch(()=>toast("No se pudo eliminar"));
+    return;
+  }
+  if(t.id==="dropClear"){pending="remove";setDrop(null);return}
+  if(t.id==="fab"){openForm(null);return}
+  if(t.id==="saveBtn"){saveForm();return}
+  if(t.parentElement&&t.parentElement.id==="tabs"){filter=t.dataset.f;document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",String(b===t)));renderList()}
+});
+$("#drop").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fileTarget="form";$("#file").click()}});
+$("#q").addEventListener("input",e=>{query=e.target.value.trim();renderList()});
+$("#file").addEventListener("change",async e=>{
+  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  let blob;try{blob=await shrink(f,1400)}catch(err){toast("Ese archivo no es una imagen válida");return}
+  if(fileTarget==="form"){if(pending&&pending.url)URL.revokeObjectURL(pending.url);pending={blob,url:URL.createObjectURL(blob)};setDrop(pending.url)}
+  else if(current) setRecipePhoto(current,blob);
+});
+
+// ---------- Guardado ----------
+const LS="recetario-v1";
+function localStore(){
+  const read=()=>{try{return JSON.parse(localStorage.getItem(LS))||{}}catch(e){return {}}};
+  const write=d=>{try{localStorage.setItem(LS,JSON.stringify(d))}catch(e){const x=new Error("full");x.code="quota_exceeded";throw x}};
+  const d=read();mine=d.mine||[];favs=new Set(d.favs||[]);photos=d.photos||{};
+  return {
+    save:async r=>{const x=read();x.mine=(x.mine||[]).filter(y=>y.id!==r.id).concat([r]);write(x)},
+    remove:async id=>{const x=read();x.mine=(x.mine||[]).filter(y=>y.id!==id);write(x)},
+    savePrefs:async()=>{const x=read();x.favs=[...favs];x.photos=photos;write(x)},
+    upload:async b=>blobToData(await shrink(b,900)),
+    dropPhoto:()=>{}
+  };
+}
+store=localStore();renderList();
+$("#status").textContent="Tus recetas se guardan en este dispositivo.";
+
+(async()=>{
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const [db,user,assets]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("assets")]);
+    if(!db||!user)return;
+    const uid=await user.id();if(!uid)return;
+    const col=db.collection("data/users/"+uid);
+    const snap=await col.get();
+    const remote=[];let prefs={};
+    snap.docs.forEach(d=>{if(!d.exists)return;const v=d.data();if(d.id==="prefs")prefs=v||{};else if(v&&v.own)remote.push(v)});
+    const localMine=mine.filter(r=>!remote.some(x=>x.id===r.id));
+    const localFavs=favs;
+    canPhoto=!!assets;
+    store={
+      save:r=>col.doc(r.id).set(r),
+      remove:id=>col.doc(id).delete(),
+      savePrefs:()=>col.doc("prefs").set({favs:[...favs],photos}),
+      upload:async b=>{if(!assets)throw new Error("sin fotos");const res=await assets.upload(b);return res.id},
+      dropPhoto:v=>{if(assets&&v&&!v.startsWith("data:"))assets.delete(v).catch(()=>{})}
+    };
+    for(const r of localMine){const c=Object.assign({},r);if(c.photo&&c.photo.startsWith("data:")){try{c.photo=assets?(await assets.upload(await (await fetch(c.photo)).blob())).id:null}catch(e){c.photo=null}}try{await col.doc(c.id).set(c);remote.push(c)}catch(e){}}
+    mine=remote.sort((a,b)=>(a.updated||0)-(b.updated||0));
+    favs=new Set([...(prefs.favs||[]),...localFavs]);
+    photos=Object.assign({},prefs.photos||{});
+    if(localMine.length||favs.size!==(prefs.favs||[]).length)store.savePrefs().catch(()=>{});
+    $("#status").textContent="Tus recetas y fotos se guardan en tu cuenta y solo tú puedes verlas.";
+    renderList();
+    if(current&&!$("#vDetail").hidden){current=all().find(r=>r.id===current.id)||current;renderDetail()}
+  }catch(e){}
+})();
+})();
+</script>
+</body>
+</html>
